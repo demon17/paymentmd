@@ -1,0 +1,19 @@
+{
+    "name": "cornel/paynet",
+    "autoload": {
+        "psr-4": {
+            "Paymentmd\\Paynet\\": "packages/paymentmd/paynet/src"
+        }
+    },
+    "classmap": [
+        "database/seeds",
+        "database/factories"
+    ],
+    "require": {},
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/demon17/greetr"
+        }
+    ]
+}
