@@ -15,5 +15,13 @@
             "Paymentmd\\Paynet\\": "src/"
         }
     },
+    "scripts": {
+        "post-package-install": [
+            "php artisan vendor:publish --tag=payment-config --force"
+        ],
+        "post-package-update": [
+            "php artisan vendor:publish --tag=payment-config --force"
+        ]
+    },
     "require": {}
 }

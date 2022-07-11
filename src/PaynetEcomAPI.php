@@ -1,58 +1,68 @@
 <?php
-/**************************************
-Version: 1.0
-User: v.bragari
-Email: v.bragari@paynet.md
-Date: 2018-07-07
-*/
 
 namespace Paymentmd\Paynet;
 
-use Modules\Payment\Interfaces\PaymentGateWayInterface;
+use Carbon\Carbon;
+use Exception;
+use Modules\DocDreamApi\Repositories\Order\OrderRepositoryInterface;
+use Modules\Order\Enums\OrderStatuses;
+use Modules\Order\Models\Order;
+use Modules\Payment\Wallet\Wallet;
+use Modules\Wallet\Models\WalletTransaction;
 
-class PaynetEcomAPI implements PaymentGateWayInterface
+/**
+ * PaynetEcomAPI class works with paynet API
+ */
+class PaynetEcomAPI
 {
+    /**
+     * Version
+     */
 	const API_VERSION = "Version 1.2";
+
 	/**
-		Paynet merchant code.
+		Merchant code.
 	*/
 	private $merchant_code;
 
 	/**
-		Paynet merchant secret key.
+		Merchant secret key.
 	*/
 	private $merchant_secret_key;
 
 	/**
-		Paynet merchant user for access to API.
+		Merchant user for access to API.
 	*/
 	private $merchant_user;
 
 	/**
-		Paynet merchant user's password.
+		Merchant user's password.
 	*/
 	private $merchant_user_password;
+
 	/**
 		The base URL to UI
 	*/
-//	const PAYNET_BASE_UI_URL =  "https://test.paynet.md/acquiring/setecom";        // production link: https://paynet.md/acquiring/setecom
     private $paynet_base_ui_url;
+
 	/**
 		The base URL to UI
 	*/
-//    const PAYNET_BASE_UI_SERVER_URL = "https://test.paynet.md/acquiring/getecom";  // production link: https://paynet.md/acquiring/getecom
     private $paynet_base_ui_server_url;
 
 	/**
 		The base URL to API
 	*/
-//	const PAYNET_BASE_API_URL = 'https://test.paynet.md:4446';                     // production link: https://paynet.md:4446
     private $api_base_url;
+
 	/**
 		The expiry time for this operation, in hours
 	*/
 	const EXPIRY_DATE_HOURS = 4 ;//  hours
 
+    /**
+     * Adapting hours
+     */
 	const ADAPTING_HOURS = 1 ;//  hours
 
 	public function __construct()
@@ -61,6 +71,9 @@ class PaynetEcomAPI implements PaymentGateWayInterface
         $this->setProdLinks();
 	}
 
+    /**
+     * @return void
+     */
     private function setProdLinks()
     {
         $this->paynet_base_ui_url = 'https://test.paynet.md/acquiring/setecom';
@@ -71,6 +84,10 @@ class PaynetEcomAPI implements PaymentGateWayInterface
             $this->paynet_base_ui_server_url = 'https://paynet.md/acquiring/getecom';
         }
     }
+
+    /**
+     * @return void
+     */
     private function setConfig() {
         $env = 'dev';
 
@@ -85,11 +102,18 @@ class PaynetEcomAPI implements PaymentGateWayInterface
         $this->api_base_url = config("payment.paynet.{$env}.PAYNET_BASE_API_URL");
     }
 
+    /**
+     * @return string
+     */
 	public function Version()
 	{
 		return self::API_VERSION;
 	}
 
+    /**
+     * @param $addHeader
+     * @return PaynetResult
+     */
 	public function TokenGet($addHeader = false)
 	{
 		$path = '/auth';
@@ -128,11 +152,15 @@ class PaynetEcomAPI implements PaymentGateWayInterface
 		return $result;
 	}
 
+    /**
+     * @param $externalID
+     * @return PaynetResult
+     */
 	public function PaymentGet($externalID)
 	{
 		$path = '/api/Payments';
 		$params = [
-            'ExternalID' 	=> $externalID
+            'ExternalID' => $externalID
         ];
 
 		$tokenReq =  $this->TokenGet(true);
@@ -164,6 +192,10 @@ class PaynetEcomAPI implements PaymentGateWayInterface
 		return $result;
 	}
 
+    /**
+     * @param $pRequest
+     * @return PaynetResult
+     */
 	public function FormCreate($pRequest)
 	{
 		$result = new PaynetResult();
@@ -218,6 +250,10 @@ class PaynetEcomAPI implements PaymentGateWayInterface
 		return $result;
 	}
 
+    /**
+     * @param $pRequest
+     * @return PaynetResult
+     */
 	public  function PaymentReg($pRequest)
 	{
 		$path = '/api/Payments/Send';
@@ -246,13 +282,6 @@ class PaynetEcomAPI implements PaymentGateWayInterface
 
 		if($tokenReq->IsOk())
 		{
-
-		//	print_r($tokenReq);
-		//	echo "<br>";
-		//	print_r($path); 			echo "<br>";
-		//	print_r($params); 			echo "<br>";
-			//print_r($tokenReq->Data[0]);
-			//return;
 			$resultCheck = $this->callApi($path, 'POST', $params,[], $tokenReq->Data);
 
 			if($resultCheck->IsOk())
@@ -263,10 +292,7 @@ class PaynetEcomAPI implements PaymentGateWayInterface
 				{
 						$result->Code = $resultCheck->Data['Code'];
 						$result->Message = $resultCheck->Data['Message'];
-				}else
-				{
-					//print_r($resultCheck->Data);
-					//print_r($pRequest);
+				} else {
 					$pp_form =  '<form method="POST" action="'.$this->paynet_base_ui_server_url.'">'.
 					'<input type="hidden" name="operation" value="'.htmlspecialchars_decode($resultCheck->Data['PaymentId']).'"/>'.
 					'<input type="hidden" name="LinkUrlSucces" value="'.htmlspecialchars_decode($pRequest->LinkSuccess).'"/>'.
@@ -278,17 +304,25 @@ class PaynetEcomAPI implements PaymentGateWayInterface
 					'</form>';
 					$result->Data = $pp_form;
 				}
-
-			}else
-				$result = $resultCheck;
-		}else
-		{
+			} else {
+                $result = $resultCheck;
+            }
+		}else {
 			$result->Code = $tokenReq->Code;
 			$result->Message = $tokenReq->Message;
 		}
 
 		return $result;
 	}
+
+    /**
+     * @param $path
+     * @param $method
+     * @param $params
+     * @param $query_params
+     * @param $headers
+     * @return PaynetResult
+     */
 	private function callApi($path, $method = 'GET', $params = [], $query_params = [], $headers = [])
     {
 		$result = new PaynetResult();
@@ -335,20 +369,36 @@ class PaynetEcomAPI implements PaymentGateWayInterface
         // Remember to close the cURL object
         curl_close($ch);
 		$result->Code = PaynetCode::SUCCESS;
+
         return $result;
     }
 
+    /**
+     * @param $addHours
+     * @return string
+     */
 	private function ExpiryDateGet($addHours)
 	{
 		$date = strtotime("+".$addHours." hour");
+
 		return date('Y-m-d', $date).'T'.date('H:i:s', $date);
 	}
 
+    /**
+     * @param $addHours
+     * @return string
+     */
 	public function ExternalDate($addHours = self::ADAPTING_HOURS)
 	{
 		$date = strtotime("+".$addHours." hour");
+
 		return date('Y-m-d', $date).'T'.date('H:i:s', $date);
 	}
+
+    /**
+     * @param $request
+     * @return string
+     */
 	private function SignatureGet($request)
 	{
 			$_sing_raw  = $request->Currency;
@@ -359,10 +409,19 @@ class PaynetEcomAPI implements PaymentGateWayInterface
 
 			return base64_encode(md5($_sing_raw, true));
 	}
+
+    /**
+     * @param $name
+     * @return null
+     */
 	public function __get ($name) {
         return $this->$name ?? null;
     }
 
+    /**
+     * @param $data
+     * @return array|void
+     */
     public function proceedCharge($data)
     {
         $prequest = $this->prepareDataForPayment($data);
@@ -377,6 +436,10 @@ class PaynetEcomAPI implements PaymentGateWayInterface
         }
     }
 
+    /**
+     * @param $data
+     * @return PaynetRequest
+     */
     private function prepareDataForPayment($data): PaynetRequest
     {
         $order = $data['order'];
@@ -418,6 +481,11 @@ class PaynetEcomAPI implements PaymentGateWayInterface
         return $prequest;
     }
 
+    /**
+     * @param $wallet_transaction
+     * @return array
+     * @throws Exception
+     */
     public function topUpWallet($wallet_transaction)
     {
         $prequest = new PaynetRequest();
@@ -450,6 +518,52 @@ class PaynetEcomAPI implements PaymentGateWayInterface
             return ['status' => 'success', 'data' => $data];
         }
 
-        throw new \Exception('Payment error' . json_encode($formObj));
+        throw new Exception('Payment error' . json_encode($formObj));
+    }
+
+    /**
+     * @return bool|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
+     */
+    public function callbackIsOk() {
+        // get callback post data
+        $api = new PaynetEcomAPI();
+        $payment_info = file_get_contents('php://input');
+        $payment_obj = json_decode($payment_info, true);
+
+        // reformat date remove milliseconds
+        $eventDate = Carbon::parse($payment_obj['EventDate'])->format('Y-m-d\TH:i:s');
+        $statusDate = Carbon::parse($payment_obj['Payment']['StatusDate'])->format('Y-m-d\TH:i:s');
+
+        // make signature
+        $prepared_string = $eventDate . $payment_obj['Eventid'] . $payment_obj['EventType']
+            . $payment_obj['Payment']['Amount'] . $payment_obj['Payment']['Customer'] . $payment_obj['Payment']['ExternalId']
+            . $payment_obj['Payment']['Id'] . $payment_obj['Payment']['Merchant'] . $statusDate;
+
+        $env = 'dev';
+
+        if(config('app.env') == 'production') {
+            $env = 'production';
+        }
+
+        $secret_key = config("payment.paynet.{$env}.MERCHANT_SEC_KEY");
+        $message = $prepared_string . $secret_key;
+        $signature = base64_encode(md5($message, true));
+
+        // Errors flow
+        if(!$payment_obj){
+            logger()->channel('payment')->error('Callback is empty');
+
+            return response('Not found', 404);
+        }
+        if ($signature !== apache_request_headers()['Hash']) {
+            logger()->channel('payment')->error('Hash not match');
+
+            return response('Error', 403);
+        }
+
+        // Success flow
+        $checkObj = $api->PaymentGet($payment_obj['Payment']['ExternalId']);
+
+        return $checkObj->IsOk();
     }
 }

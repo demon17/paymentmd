@@ -2,6 +2,9 @@
 
 namespace Paymentmd\Paynet;
 
+/**
+ * Paynet Request
+ */
 class PaynetRequest
 {
     public $ExternalDate;
@@ -13,8 +16,8 @@ class PaynetRequest
     public $ExpiryDate;
     //---------  ru, ro, en
     public $Lang;
-    public $Service = array();
-    public $Products = array();
-    public $Customer = array();
+    public $Service = [];
+    public $Products = [];
+    public $Customer = [];
     public $Amount;
 }

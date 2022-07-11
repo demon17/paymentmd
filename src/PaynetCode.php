@@ -2,6 +2,9 @@
 
 namespace Paymentmd\Paynet;
 
+/**
+ * Paynet Code
+ */
 class PaynetCode
 {
     const SUCCESS = 0;
