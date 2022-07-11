@@ -1,13 +1,19 @@
 {
-    "name": "paymentmd/paynet",
-    "autoload": {
+    "name": "demon17/paymentmd",
+    "description": "Paynet Md Package",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "cornel.plamadeala",
+            "email": "cornel.plamadeala@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload":{
         "psr-4": {
             "Paymentmd\\Paynet\\": "src/"
         }
     },
-    "classmap": [
-        "database/seeds",
-        "database/factories"
-    ],
     "require": {}
 }
