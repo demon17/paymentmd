@@ -3,7 +3,7 @@
 namespace Paymentmd\Paynet;
 
 /**
- * Paynet Code
+ * Paynet Error Code
  */
 class PaynetCode
 {

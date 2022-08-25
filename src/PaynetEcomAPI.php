@@ -4,11 +4,6 @@ namespace Paymentmd\Paynet;
 
 use Carbon\Carbon;
 use Exception;
-use Modules\DocDreamApi\Repositories\Order\OrderRepositoryInterface;
-use Modules\Order\Enums\OrderStatuses;
-use Modules\Order\Models\Order;
-use Modules\Payment\Wallet\Wallet;
-use Modules\Wallet\Models\WalletTransaction;
 
 /**
  * PaynetEcomAPI class works with paynet API
@@ -86,14 +81,18 @@ class PaynetEcomAPI
     }
 
     /**
+     * Set config use environment variable `config('app.env')`
+     *
      * @return void
      */
     private function setConfig() {
-        $env = 'dev';
+        /*$env = 'dev';
 
         if(config('app.env') == 'production') {
             $env = 'production';
-        }
+        }*/
+
+        $env = config('app.env');
 
         $this->merchant_code = config("payment.paynet.{$env}.MERCHANT_CODE");
         $this->merchant_secret_key = config("payment.paynet.{$env}.MERCHANT_SEC_KEY");
@@ -539,11 +538,7 @@ class PaynetEcomAPI
             . $payment_obj['Payment']['Amount'] . $payment_obj['Payment']['Customer'] . $payment_obj['Payment']['ExternalId']
             . $payment_obj['Payment']['Id'] . $payment_obj['Payment']['Merchant'] . $statusDate;
 
-        $env = 'dev';
-
-        if(config('app.env') == 'production') {
-            $env = 'production';
-        }
+        $env = config('app.env');
 
         $secret_key = config("payment.paynet.{$env}.MERCHANT_SEC_KEY");
         $message = $prepared_string . $secret_key;
