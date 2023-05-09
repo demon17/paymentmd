@@ -1,6 +1,6 @@
 <?php
 
-namespace MyVendor\MyPackageName;
+namespace Paymentmd\Paynet;
 
 class MyAwesomeClass
 {
