@@ -1,0 +1,25 @@
+{
+  "name": "lodash",
+  "version": "1.0.0",
+  "description": "test-desc",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/demon17/paymentmd.git"
+  },
+  "keywords": [
+    "test-key"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/demon17/paymentmd/issues"
+  },
+  "homepage": "https://github.com/demon17/paymentmd#readme",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
+}
