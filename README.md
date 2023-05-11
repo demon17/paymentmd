@@ -1,5 +1,5 @@
 readme for paynet md
 
 ``
-composer create-project paymentmd/paynet
+composer require paymentmd/paynet
 ``
